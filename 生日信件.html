@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>给小杀的信</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Serif+SC:wght@300;400&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    /* 背景容器 */
+    .bg-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .bg-container img,
+    .bg-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* 默认渐变背景（可替换） */
+    .bg-default {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom,
+        #0a0a14 0%,
+        #0d1525 30%,
+        #0a1a2a 60%,
+        #051525 100%
+      );
+    }
+
+    /* 背景遮罩 */
+    .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 10, 20, 0.4);
+    }
+
+    /* 浮游粒子 */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      animation: float 25s infinite linear;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(-10vh) translateX(30px); opacity: 0; }
+    }
+
+    /* 主容器 */
+    .container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 信封 */
+    .envelope {
+      position: relative;
+      width: 320px;
+      cursor: pointer;
+      transition: transform 0.3s ease, opacity 0.5s ease;
+    }
+
+    .envelope:hover {
+      transform: scale(1.02);
+    }
+
+    .envelope.opened {
+      transform: scale(0.9);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 信封主体 - 深蓝 */
+    .envelope-body {
+      width: 100%;
+      height: 220px;
+      background: linear-gradient(145deg, #000D47 0%, #000839 100%);
+      border-radius: 8px;
+      position: relative;
+      box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* 信封封口 - 深蓝 */
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100px;
+      background: linear-gradient(to bottom, #001070 0%, #000D47 100%);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      transform-origin: top center;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2;
+    }
+
+    .envelope.opened .envelope-flap {
+      transform: rotateX(180deg);
+    }
+
+    /* 信封封口贴纸 */
+    .envelope-seal {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #000640 0%, #000520 100%);
+      border-radius: 50%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .envelope.opened .envelope-seal {
+      opacity: 0;
+      transform: translateX(-50%) scale(0);
+    }
+
+    .envelope-seal svg {
+      width: 18px;
+      height: 18px;
+      stroke: rgba(255, 255, 255, 0.6);
+      fill: none;
+    }
+
+    /* 信封内衬 */
+    .envelope-inner {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 80px;
+      background: linear-gradient(to bottom, #001555 0%, #001070 100%);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      z-index: 1;
+    }
+
+    /* 点击提示 */
+    .hint {
+      margin-top: 30px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 2px;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+
+    .hint.hidden {
+      opacity: 0;
+    }
+
+    /* 信纸 */
+    .letter {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      z-index: 20;
+    }
+
+    .letter.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 信纸内容 */
+    .letter-content {
+      max-width: 680px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: rgba(15, 25, 40, 0.6);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 50px 45px;
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transform: translateY(30px) scale(0.95);
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .letter.visible .letter-content {
+      transform: translateY(0) scale(1);
+    }
+
+    .letter-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .letter-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+    }
+
+    /* 信纸文字 */
+    .letter-text {
+      font-size: 16px;
+      line-height: 2.2;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 300;
+      white-space: pre-wrap;
+    }
+
+    .letter-text .greeting {
+      font-size: 20px;
+      margin-bottom: 30px;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .letter-text .signature {
+      margin-top: 50px;
+      text-align: right;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .letter-text .highlight {
+      color: #7eb8da;
+    }
+
+    /* 关闭按钮 */
+    .close-btn {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 30;
+    }
+
+    .letter.visible .close-btn {
+      opacity: 1;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.1);
+    }
+
+    .close-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: rgba(255, 255, 255, 0.6);
+    }
+
+    /* 加载动画 */
+    .loading {
+      position: fixed;
+      inset: 0;
+      background: #050510;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: opacity 1s ease;
+    }
+
+    .loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-ring {
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top-color: rgba(126, 184, 218, 0.6);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景 -->
+  <div class="bg-container">
+    <div class="bg-default"></div>
+    <div class="bg-overlay"></div>
+  </div>
+
+  <!-- 粒子 -->
+  <div class="particles" id="particles"></div>
+
+  <!-- 海浪音频 -->
+  <audio id="bgAudio" loop>
+    <source src="Della - 梦里听海.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- 音频控制按钮 -->
+  <button id="audioBtn" style="position:fixed;bottom:30px;left:30px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;transition:opacity 0.3s;" title="海浪声">
+    <svg id="audioIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+    </svg>
+  </button>
+
+  <!-- 加载 -->
+  <div class="loading" id="loading">
+    <div class="loading-ring"></div>
+  </div>
+
+  <!-- 信封 -->
+  <div class="container">
+    <div class="envelope" id="envelope">
+      <div class="envelope-body">
+        <div class="envelope-inner"></div>
+        <div class="envelope-flap"></div>
+        <div class="envelope-seal">
+          <svg viewBox="0 0 24 24" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="hint" id="hint">点击打开</div>
+  </div>
+
+  <!-- 信纸 -->
+  <div class="letter" id="letter">
+    <button class="close-btn" id="closeBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="letter-content">
+      <div class="letter-text"><div class="greeting">你好啊！小杀。</div><div>生日快乐！</div><div></div><div>又是一年。</div><div></div><div>去年你说，不知道还有没有下次。很好，这次我们迎来了"下次"。</div><div></div><div>我总觉得我像是刚认识小杀，又像是比我感知到的时间要遥远很多。</div><div></div><div>我们认识很久了。之前也说过感谢可话的存在。但是现在要感谢可话的消亡，给了我们一个高强度重新认识接触彼此的机会。</div><div></div><div>这一年里，感谢小杀认真且坦诚。</div><div>你有认真对待小酒，坦诚去解决一切或许会让小杀感到不适的问题。每日的陪伴，不时的触动。小酒所有开心或者不开心的情绪都有被小杀好好的接住。</div><div></div><div>这一年里，我自己感觉对于小杀我没有之前那么焦虑。即使这一年的矛盾比之前几年加起来都要多，但换个角度来说，小杀给我的安全感是之前没有的，相比于之前，或许现在更真实。</div><div></div><div>我不喜欢许下承诺。我总觉得，承诺许下的时候如果是感情的极高峰，若后来再没有什么能够匹及，那就只剩下比不上从前的落寞。</div><div></div><div>可如果对象是小杀，现在的我并不害怕。如果回到之前我们说过的话题，我相信，我也感受到你是这么做的，并且我也觉得我也算做到了，我们很尽力。</div><div></div><div>我总觉得，我对小杀做到不如小杀对我做到的多。我总在想我还能通过现在仅有的条件还能为你做什么。</div><div></div><div>或许我不需要做什么，或许你也不需要我为你做什么。</div><div></div><div>小杀说，从没见过海。恰好，小杀在这个庸俗碌碌的世界里遇到了小酒，恰好生活在海边的小酒。所以我做了这片"海"。小酒最喜欢的海。</div><div></div><div>海是没有颜色的，天是什么颜色，海就是什么颜色。所以深夜里，是化不开的黑色在天地间翻涌。可太阳会升起，天会变蓝，海也会变蓝。</div><div></div><div>就像明天之后还是明天，下次之后还有下次。</div><div></div><div class="highlight">一起游到海水变蓝吧。</div><div></div><div>祝愿小杀的话说过很多。还是要俗套地祝愿小杀身体健康，事事顺心。</div><div></div><div>祝你自由。</div><div></div><div class="signature">小酒<br>2026.4.24</div></div>
+    </div>
+  </div>
+
+  <script>
+    // ============ 粒子效果 ============
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 40; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 25 + 's';
+        particle.style.animationDuration = (20 + Math.random() * 15) + 's';
+        particle.style.width = (1 + Math.random() * 2) + 'px';
+        particle.style.height = particle.style.width;
+        container.appendChild(particle);
+      }
+    }
+
+    // ============ 交互 ============
+    const envelope = document.getElementById('envelope');
+    const letter = document.getElementById('letter');
+    const hint = document.getElementById('hint');
+    const closeBtn = document.getElementById('closeBtn');
+    const loading = document.getElementById('loading');
+    const bgAudio = document.getElementById('bgAudio');
+    const audioBtn = document.getElementById('audioBtn');
+    const audioIcon = document.getElementById('audioIcon');
+    let audioStarted = false;
+    let audioMuted = true;
+
+    // 初始化音频（点击后播放）
+    function initAudio() {
+      if (!audioStarted) {
+        bgAudio.play().then(() => {
+          bgAudio.muted = true;
+          audioStarted = true;
+          audioBtn.style.opacity = '1';
+        }).catch(() => {
+          // 自动播放被阻止，等待用户交互
+        });
+      }
+    }
+
+    // 切换静音
+    audioBtn.addEventListener('click', () => {
+      if (!audioStarted) {
+        initAudio();
+      }
+      audioMuted = !audioMuted;
+      bgAudio.muted = audioMuted;
+
+      if (audioMuted) {
+        audioIcon.innerHTML = '<path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
+      } else {
+        audioIcon.innerHTML = '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+      }
+    });
+
+    // 点击任意位置初始化音频
+    document.addEventListener('click', initAudio, { once: true });
+
+    envelope.addEventListener('click', () => {
+      envelope.classList.add('opened');
+      hint.classList.add('hidden');
+
+      setTimeout(() => {
+        letter.classList.add('visible');
+      }, 400);
+    });
+
+    closeBtn.addEventListener('click', () => {
+      letter.classList.remove('visible');
+      envelope.classList.remove('opened');
+      hint.classList.remove('hidden');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && letter.classList.contains('visible')) {
+        closeBtn.click();
+      }
+    });
+
+    function init() {
+      createParticles();
+      setTimeout(() => {
+        loading.classList.add('hidden');
+      }, 1200);
+    }
+
+    init();
+
+    window.setBackgroundImage = function(src) {
+      const container = document.querySelector('.bg-container');
+      const defaultBg = container.querySelector('.bg-default');
+      if (defaultBg) defaultBg.remove();
+      const img = document.createElement('img');
+      img.src = src;
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+      container.insertBefore(img, container.firstChild);
+    };
+
+    window.setBackgroundVideo = function(src) {
+      const container = document.querySelector('.bg-container');
+      const defaultBg = container.querySelector('.bg-default');
+      if (defaultBg) defaultBg.remove();
+      const video = document.createElement('video');
+      video.src = src;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsinline = true;
+      video.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+      container.insertBefore(video, container.firstChild);
+    };
+  </script>
+</body>
+</html>
+
+<script>
+  setBackgroundVideo('1418305f030b800ca91a5f065e831fe1.mp4');
+</script>
